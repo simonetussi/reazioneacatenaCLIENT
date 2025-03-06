@@ -1,0 +1,77 @@
+DOPO AVER INSTALLATO CORRETTAMENTE GIT
+DOPO AVER INSTALLATO CORRETTAMENTE GIT
+DOPO AVER INSTALLATO CORRETTAMENTE GIT
+DOPO AVER INSTALLATO CORRETTAMENTE GIT
+DOPO AVER INSTALLATO CORRETTAMENTE GIT
+
+
+### 1. **Vai nella cartella del tuo progetto**  
+Apri il terminale e spostati nella cartella del tuo progetto locale:  
+```
+cd /percorso/del/progetto 
+```
+
+### 2. **Collega la repository remota**  
+Aggiungi il link alla repository che hai creato su GitHub. 
+```
+git remote add origin https://github.com/simonetussi/reazioneacatena.git
+```
+
+Verifica che sia stato aggiunto correttamente con:  
+```
+git remote -v
+```
+
+### 3. **Aggiungi i file, fai il commit e inviali su GitHub**
+
+```
+git add .
+git commit -m "Messaggio descrittivo"
+git push -u origin main
+```
+
+-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
+
+DOPO AVER COLLEGATO LA CARTELLA SUL PROPRIO COMPUTER A QUELLA DI GITHUB
+DOPO AVER COLLEGATO LA CARTELLA SUL PROPRIO COMPUTER A QUELLA DI GITHUB
+DOPO AVER COLLEGATO LA CARTELLA SUL PROPRIO COMPUTER A QUELLA DI GITHUB
+DOPO AVER COLLEGATO LA CARTELLA SUL PROPRIO COMPUTER A QUELLA DI GITHUB
+DOPO AVER COLLEGATO LA CARTELLA SUL PROPRIO COMPUTER A QUELLA DI GITHUB
+
+
+
+
+### **4. Aggiungere file alla repository**
+```
+git add nomefile.txt
+```
+
+---
+
+### **5. Salvare le modifiche (commit)**
+```
+git commit -m "Messaggio descrittivo"
+```
+✅ Fa il commit di tutte le modifiche ai file già tracciati, senza usare `git add`.
+
+---
+
+### **6. Caricare il progetto su GitHub**
+```
+git push -u origin main
+```
+✅ Invia i commit alla repository remota su GitHub.
+
+
+---
+
+### **7. Scaricare modifiche da GitHub**
+
+```
+git pull origin main --rebase
+```
+✅ Scarica le modifiche dalla repository remota e aggiorna i file locali.  
+
+
+
