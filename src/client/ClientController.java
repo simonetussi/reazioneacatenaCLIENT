@@ -1,5 +1,9 @@
 package client;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -34,18 +38,13 @@ public class ClientController {
         btn_play.setVisible(false);
         lbl_nickname.setVisible(false);
         
-        System.out.println("Inizio partita");
-
         gameServlet.startGame();
-        
-        System.out.println("Partita iniziata");
     }
 
     @FXML
     void initialize() {
         gameServlet = new GameServlet(id_current_score, id_last_score, id_best_score, 
                                       id_background, id_green, id_red, id_yellow, id_blue, id_logo, lbl_nickname);
-        System.out.println("Controller initialized");
         id_green.setOnMouseClicked(_ -> gameServlet.handleColorClick(1));
         id_red.setOnMouseClicked(_ -> gameServlet.handleColorClick(2));
         id_yellow.setOnMouseClicked(_ -> gameServlet.handleColorClick(3));
@@ -56,15 +55,63 @@ public class ClientController {
         if (nickname.isEmpty()) {
         	GameServlet.showAlert(AlertType.WARNING, "ATTENZIONE", "Errore nickname",
                     "Devi inserire un nickname per poter giocare.");
-        	System.out.println("Nickname vuoto");
             return false;
         } else if (!nickname.matches("^[A-Za-z][A-Za-z0-9_]*[A-Za-z]$")) {
             GameServlet.showAlert(AlertType.WARNING, "ATTENZIONE", "Errore nickname",
                     "Il nickname deve iniziare e finire con una lettera e può contenere solo lettere, numeri e underscore.");
-            System.out.println("Nickname non valido");
             return false;
-        }
-        System.out.println("Nickname valido");
+		} else if (nickname.length() < 3 || nickname.length() > 15) {
+			GameServlet.showAlert(AlertType.WARNING, "ATTENZIONE", "Errore nickname",
+					"Il nickname deve essere lungo tra 3 e 15 caratteri.");
+			return false;
+		}
         return true;
+    }
+    
+    public void illuminateColor(int color){
+        switch (color) {
+            case 1: id_green.setOpacity(1.0); 
+            	break;
+            case 2: id_red.setOpacity(1.0);
+            	break;
+            case 3: id_yellow.setOpacity(1.0);
+            	break;
+            case 4: id_blue.setOpacity(1.0);
+            	break;
+        }
+        System.out.println("Color illuminated: " + color);
+        resetColor();
+    }
+    
+    public void resetColor() {
+        id_green.setOpacity(0.3);
+        id_red.setOpacity(0.3);
+        id_yellow.setOpacity(0.3);
+        id_blue.setOpacity(0.3);
+    }
+    
+    public String getChiamata(String id, String nickname, int colore) throws IOException {
+        String urlString = "http://localhost:8080/reaioneaacatena/giocatore?"
+                + "id=" + id
+                + "&nickname=" + nickname
+                + "&colore=" + colore;
+
+        URL url = new URL(urlString);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String inputLine;
+        
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+
+        String serverResponse = response.toString();
+
+        return serverResponse;
     }
 }
