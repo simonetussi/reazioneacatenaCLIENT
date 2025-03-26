@@ -1,6 +1,10 @@
 package client;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -19,35 +23,30 @@ import javafx.event.ActionEvent;
 
 public class ClientController {
 
-    @FXML private URL location;
     @FXML private Button btn_play;
     @FXML private Text id_nickname_setted;
     @FXML private Text id_best_score, id_current_score, id_last_score;
     @FXML private ImageView id_green, id_red, id_yellow, id_blue;
-    @FXML private ImageView id_logo;
-    @FXML private AnchorPane id_background;
     @FXML private TextField lbl_nickname;
 
     private int currentScore = 0, currentStep = 0, userIndex = 0;
-    private ArrayList < Integer > userInput = new ArrayList < > ();
+    private ArrayList<Integer> userInput = new ArrayList<>();
     private int[] sequence = new int[100];
     private boolean isPlaying = false;
 
     @FXML
     void play(ActionEvent event) {
         String nickname = lbl_nickname.getText().trim();
-        if (checkNickname(nickname) == false) return;
+        if (!checkNickname(nickname)) return;
 
-        id_nickname_setted.setText(lbl_nickname.getText());
+        id_nickname_setted.setText(nickname);
         btn_play.setVisible(false);
         lbl_nickname.setVisible(false);
-
         startGame();
     }
 
     @FXML
     void initialize() {
-        // Imposta i listener per il clic sui colori
         id_green.setOnMouseClicked(_ -> handleColorClick(1));
         id_red.setOnMouseClicked(_ -> handleColorClick(2));
         id_yellow.setOnMouseClicked(_ -> handleColorClick(3));
@@ -58,29 +57,29 @@ public class ClientController {
         createSequence();
         currentStep = 1;
         userIndex = 0;
+        currentScore = 0;
         id_current_score.setText("0");
-
         disableImages(true);
         playSequence();
     }
 
     public void handleColorClick(int color) {
-        if (isPlaying) return; // Ignora se la sequenza è in riproduzione
+        if (isPlaying) return;
 
         if (userIndex < currentStep) {
             userInput.add(color);
-            if (color != sequence[userIndex]) { // Controlla se il colore è corretto
-                handleError(); // Gestisce l'errore
+            if (color != sequence[userIndex]) { 
+                handleError();
                 return;
             }
             userIndex++;
-            if (userIndex == currentStep) { // Se la sequenza è completata
-                currentScore++; // Incrementa il punteggio
+            if (userIndex == currentStep) { 
+                currentScore++; 
                 id_current_score.setText(String.valueOf(currentScore));
-                currentStep++; // Aumenta la lunghezza della sequenza
+                currentStep++;
                 userIndex = 0;
-                userInput.clear(); // Pulisce l'input dell'utente
-                playSequence(); // Mostra la nuova sequenza
+                userInput.clear();
+                playSequence(); 
             }
         }
     }
@@ -88,21 +87,17 @@ public class ClientController {
     private void playSequence() {
         isPlaying = true;
         disableImages(true);
-        Timeline timeline = new Timeline(); // Anima la sequenza
+        Timeline timeline = new Timeline();
 
         for (int i = 0; i < currentStep; i++) {
             int color = sequence[i];
 
-            // Illumina il colore
-            timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(i * 1.0),
+            timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(i),
                 _ -> illuminateColor(color)));
-
-            // Resetta il colore dopo 0.5 secondi
-            timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(i * 1.0 + 0.5),
+            timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(i + 0.5),
                 _ -> resetColor()));
         }
 
-        // Al termine della sequenza, abilita le immagini
         timeline.setOnFinished(_ -> {
             disableImages(false);
             isPlaying = false;
@@ -120,38 +115,28 @@ public class ClientController {
     }
 
     private void handleError() {
-        id_current_score.setText("0");
         id_last_score.setText(String.valueOf(currentScore));
         int bestScore = Integer.parseInt(id_best_score.getText());
         if (currentScore > bestScore) {
             id_best_score.setText(String.valueOf(currentScore));
         }
+        sendScoreToServer(currentScore);
         currentScore = 0;
         currentStep = 0;
         userIndex = 0;
-        showAlert(AlertType.ERROR, "Attenzione!", "Hai sbagliato!",
-            "La sequenza inserita non è corretta. Riprova da capo.");
+        showAlert(AlertType.ERROR, "Errore", "Hai sbagliato!",
+            "Sequenza errata! Riprova.");
         startGame();
     }
 
     public boolean checkNickname(String nickname) {
-        if (nickname.isEmpty()) {
-            showAlert(AlertType.WARNING, "ATTENZIONE", "Errore nickname",
-                "Devi inserire un nickname per poter giocare.");
+        if (nickname.isEmpty() || nickname.length() < 3 || nickname.length() > 15) {
+            showAlert(AlertType.WARNING, "Errore", "Nickname non valido",
+                "Il nickname deve essere tra 3 e 15 caratteri.");
             return false;
-        } else if (nickname.length() < 3) {
-            showAlert(AlertType.WARNING, "ATTENZIONE", "Nickname troppo corto",
-                "Il nickname deve essere lungo tra 3 e 15 caratteri.");
-            return false;
-        } else if (nickname.length() > 15) {
-        	showAlert(AlertType.WARNING, "ATTENZIONE", "Nickname troppo lungo",
-        			"Il nickname deve essere lungo tra 3 e 15 caratteri.");
-        	return false;
         } else if (!nickname.matches("^[A-Za-z][A-Za-z0-9_]*[A-Za-z]$")) {
-            showAlert(AlertType.WARNING, "ATTENZIONE", "Nickname inadeguato",
-                "Il nickname deve:\n  ➔ iniziare e finire con una lettera,\n"
-                + "  ➔ contenere solo lettere, numeri e underscore,\n"
-                + "  ➔ non contenere spazi o caratteri speciali.");
+            showAlert(AlertType.WARNING, "Errore", "Formato errato",
+                "Il nickname deve iniziare e finire con una lettera.");
             return false;
         }
         return true;
@@ -160,23 +145,15 @@ public class ClientController {
     public void illuminateColor(int color) {
         resetColor();
         switch (color) {
-        case 1:
-            id_green.setOpacity(1.0);
-            break;
-        case 2:
-            id_red.setOpacity(1.0);
-            break;
-        case 3:
-            id_yellow.setOpacity(1.0);
-            break;
-        case 4:
-            id_blue.setOpacity(1.0);
-            break;
+            case 1 -> id_green.setOpacity(1.0);
+            case 2 -> id_red.setOpacity(1.0);
+            case 3 -> id_yellow.setOpacity(1.0);
+            case 4 -> id_blue.setOpacity(1.0);
         }
     }
 
     public static void showAlert(AlertType type, String title,
-        String header, String content) {
+                                 String header, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -196,5 +173,33 @@ public class ClientController {
         id_red.setDisable(disable);
         id_yellow.setDisable(disable);
         id_blue.setDisable(disable);
+    }
+
+    private void sendScoreToServer(int score) {
+        try {
+            String url = "http://localhost:8080/reazioneacatenaSERVER";
+            String params = "action=registerScore&nickname=" 
+                    + URLEncoder.encode(id_nickname_setted.getText(), "UTF-8") 
+                    + "&score=" + score;
+
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(params.getBytes(StandardCharsets.UTF_8));
+            }
+
+            // Verifica la risposta del server
+            int responseCode = conn.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                showAlert(AlertType.ERROR, "Errore", "Impossibile salvare il punteggio",
+                        "Si è verificato un errore nel salvataggio del punteggio. Prova di nuovo.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(AlertType.ERROR, "Errore di Connessione", "Errore di rete",
+                    "Impossibile connettersi al server. Verifica la connessione e riprova.");
+        }
     }
 }
